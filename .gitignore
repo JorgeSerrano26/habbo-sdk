@@ -1,0 +1,6 @@
+node_modules/
+dist/
+coverage/
+*.log
+swagger.json
+.DS_Store
