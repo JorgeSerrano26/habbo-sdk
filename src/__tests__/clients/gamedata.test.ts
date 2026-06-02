@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameDataClient } from '../../clients/gamedata.js';
+import { GameDataHashedClient } from '../../clients/gamedata-hashes.js';
 import { GameDataType, HabboHotel } from '../../enums.js';
-import type { GameDataHashEntry } from '../../types.js';
+import type { GameDataHashEntry, GameDataHashesResponse } from '../../types.js';
 
 const HASHED_URLS: Record<GameDataType, string> = {
   [GameDataType.FigureData]: 'https://www.habbo.es/gamedata/figuredata/abc123',
@@ -25,6 +26,16 @@ function makeClient() {
   const sendSpy = vi.spyOn(client.http, 'send').mockResolvedValue(mockSend(''));
   return { client, sendSpy };
 }
+
+const MOCK_HASHES: GameDataHashesResponse = {
+  hashes: [
+    { name: 'figurepartlist', url: 'https://www.habbo.es/gamedata/figuredata', hash: 'fig-hash' },
+    { name: 'furnidata', url: 'https://www.habbo.es/gamedata/furnidata_xml', hash: 'furni-hash' },
+    { name: 'productdata', url: 'https://www.habbo.es/gamedata/productdata_xml', hash: 'prod-hash' },
+    { name: 'external_variables', url: 'https://www.habbo.es/gamedata/external_variables', hash: 'ext-hash' },
+    { name: 'external_texts', url: 'https://www.habbo.es/gamedata/external_flash_texts', hash: 'txt-hash' },
+  ],
+};
 
 describe('GameDataClient', () => {
   let client: GameDataClient;
@@ -339,6 +350,154 @@ describe('GameDataClient', () => {
       sendSpy.mockResolvedValue(mockSend('  key  =value'));
       const map = await client.getExternalVariablesMap();
       expect(map['key']).toBe('value');
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GameDataHashedClient
+// ---------------------------------------------------------------------------
+describe('GameDataHashedClient', () => {
+  function makeHashed(hashes = MOCK_HASHES) {
+    const gamedata = new GameDataClient({ hotel: HabboHotel.ES, fetch: vi.fn() });
+    const sendSpy = vi.spyOn(gamedata.http, 'send').mockResolvedValue(mockSend('<data/>'));
+    const client = new GameDataHashedClient(gamedata, hashes);
+    return { gamedata, client, sendSpy };
+  }
+
+  describe('fromHotel', () => {
+    it('fetches hashes and returns a ready client', async () => {
+      const gamedata = new GameDataClient({ hotel: HabboHotel.ES, fetch: vi.fn() });
+      const requestSpy = vi
+        .spyOn(gamedata.http, 'request')
+        .mockResolvedValue(MOCK_HASHES as never);
+      const client = await GameDataHashedClient.fromHotel(gamedata);
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/hashes' }),
+      );
+      expect(client).toBeInstanceOf(GameDataHashedClient);
+      expect(client.hashes).toEqual(MOCK_HASHES);
+    });
+
+    it('forwards signal and headers to the hashes request', async () => {
+      const gamedata = new GameDataClient({ hotel: HabboHotel.ES, fetch: vi.fn() });
+      const requestSpy = vi
+        .spyOn(gamedata.http, 'request')
+        .mockResolvedValue(MOCK_HASHES as never);
+      const signal = new AbortController().signal;
+      await GameDataHashedClient.fromHotel(gamedata, { signal, headers: { 'X-H': '1' } });
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ signal, headers: { 'X-H': '1' } }),
+      );
+    });
+  });
+
+  describe('resolveUrl', () => {
+    it('builds the full hashed URL for a known type', () => {
+      const { client } = makeHashed();
+      expect(client.resolveUrl(GameDataType.FurniDataXml)).toBe(
+        'https://www.habbo.es/gamedata/furnidata_xml/furni-hash',
+      );
+      expect(client.resolveUrl(GameDataType.FigureData)).toBe(
+        'https://www.habbo.es/gamedata/figuredata/fig-hash',
+      );
+    });
+
+    it('returns undefined when the type is not present in hashes', () => {
+      const { client } = makeHashed({ hashes: [] });
+      expect(client.resolveUrl(GameDataType.FigureData)).toBeUndefined();
+    });
+  });
+
+  describe('fetchRaw', () => {
+    it('uses the resolved hashed path (no redirect)', async () => {
+      const { client, sendSpy } = makeHashed();
+      await client.fetchRaw(GameDataType.FigureData);
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/figuredata/fig-hash' }),
+      );
+    });
+
+    it('maps every type to its correct hashed path', async () => {
+      const { client, sendSpy } = makeHashed();
+      await client.getFigureData();
+      await client.getFurniData();
+      await client.getProductData();
+      await client.getExternalVariables();
+      await client.getExternalTexts();
+      const paths = sendSpy.mock.calls.map((c) => (c[0] as { path: string }).path);
+      expect(paths).toContain('/gamedata/figuredata/fig-hash');
+      expect(paths).toContain('/gamedata/furnidata_xml/furni-hash');
+      expect(paths).toContain('/gamedata/productdata_xml/prod-hash');
+      expect(paths).toContain('/gamedata/external_variables/ext-hash');
+      expect(paths).toContain('/gamedata/external_flash_texts/txt-hash');
+    });
+
+    it('sets Accept: */* and merges per-request headers', async () => {
+      const { client, sendSpy } = makeHashed();
+      const signal = new AbortController().signal;
+      await client.fetchRaw(GameDataType.FigureData, { headers: { 'X-C': 'y' }, signal });
+      const call = sendSpy.mock.calls[0]![0] as {
+        headers?: Record<string, string>;
+        signal?: AbortSignal;
+      };
+      expect(call.headers?.Accept).toBe('*/*');
+      expect(call.headers?.['X-C']).toBe('y');
+      expect(call.signal).toBe(signal);
+    });
+
+    it('falls back to the redirect-based fetch when type is missing', async () => {
+      const { client, sendSpy } = makeHashed({ hashes: [] });
+      await client.fetchRaw(GameDataType.FigureData);
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/figuredata/1' }),
+      );
+    });
+
+    it('returns the response text', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(mockSend('<figuredata/>'));
+      await expect(client.getFigureData()).resolves.toBe('<figuredata/>');
+    });
+  });
+
+  describe('parsed maps', () => {
+    it('getExternalVariablesMap parses key=value', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(mockSend('a=1\nb=2'));
+      await expect(client.getExternalVariablesMap()).resolves.toEqual({ a: '1', b: '2' });
+    });
+
+    it('getExternalTextsMap parses key=value and skips bad lines', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(mockSend('greeting=Hi\n\nnoequals\nbye=Bye'));
+      await expect(client.getExternalTextsMap()).resolves.toEqual({ greeting: 'Hi', bye: 'Bye' });
+    });
+  });
+
+  describe('typed parsers', () => {
+    it('getParsedFigureData returns a FigureData object', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(mockSend('<figuredata><colors></colors><sets></sets></figuredata>'));
+      const result = await client.getParsedFigureData();
+      expect(result).toHaveProperty('colors');
+      expect(result).toHaveProperty('sets');
+    });
+
+    it('getParsedFurniData returns a FurniData object', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(
+        mockSend('<furnidata><roomitemtypes></roomitemtypes><wallitemtypes></wallitemtypes></furnidata>'),
+      );
+      const result = await client.getParsedFurniData();
+      expect(result).toHaveProperty('roomitemtypes');
+      expect(result).toHaveProperty('wallitemtypes');
+    });
+
+    it('getParsedProductData returns an array', async () => {
+      const { client, sendSpy } = makeHashed();
+      sendSpy.mockResolvedValue(mockSend('<productdata></productdata>'));
+      await expect(client.getParsedProductData()).resolves.toEqual([]);
     });
   });
 });

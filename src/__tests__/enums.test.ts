@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  FigureGender,
+  FigurePartType,
   GameDataType,
   HabboHotel,
   HabboResource,
@@ -40,6 +42,37 @@ describe('HttpMethod', () => {
   it('has the correct HTTP verb values', () => {
     expect(HttpMethod.GET).toBe('GET');
     expect(HttpMethod.POST).toBe('POST');
+  });
+});
+
+describe('FigureGender', () => {
+  it('has correct string values', () => {
+    expect(FigureGender.Male).toBe('M');
+    expect(FigureGender.Female).toBe('F');
+    expect(FigureGender.Unisex).toBe('U');
+  });
+});
+
+describe('FigurePartType', () => {
+  it('has correct string values for key part types', () => {
+    expect(FigurePartType.Hair).toBe('hr');
+    expect(FigurePartType.HairBelow).toBe('hrb');
+    expect(FigurePartType.Head).toBe('hd');
+    expect(FigurePartType.Chest).toBe('ch');
+    expect(FigurePartType.Legs).toBe('lg');
+    expect(FigurePartType.Shoes).toBe('sh');
+    expect(FigurePartType.Hat).toBe('ha');
+    expect(FigurePartType.HeadAccessory).toBe('he');
+    expect(FigurePartType.EarAccessory).toBe('ea');
+    expect(FigurePartType.Eyes).toBe('ey');
+    expect(FigurePartType.FaceAccessory).toBe('fa');
+    expect(FigurePartType.Face).toBe('fc');
+    expect(FigurePartType.ChestAccessory).toBe('ca');
+    expect(FigurePartType.Coat).toBe('cc');
+    expect(FigurePartType.ChestPrint).toBe('cp');
+    expect(FigurePartType.WaistAccessory).toBe('wa');
+    expect(FigurePartType.Body).toBe('bd');
+    expect(FigurePartType.LeftHandItem).toBe('lc');
   });
 });
 

@@ -6,7 +6,7 @@
 
 [![npm](https://img.shields.io/badge/npm-%40jorgeserrano26%2Fhabbo--sdk-red)](https://www.npmjs.com/package/@jorgeserrano26/habbo-sdk)
 [![version](https://img.shields.io/badge/version-1.0.0--beta.1-yellow)](#versioning)
-[![Tests](https://img.shields.io/badge/tests-184%20passed-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-261%20passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green)](https://nodejs.org)
@@ -186,6 +186,11 @@ const gamedata = new GameDataClient({ hotel: HabboHotel.DE });
 
 You can also pass any raw suffix string: `new HabboSDK({ hotel: 'com.tr' })`.
 
+> These 9 are the only hotels with an active public API. Historical hotels
+> listed elsewhere (e.g. `habbo.com.au`, `habbo.co.uk`, `habbo.com.mx`) have
+> been merged into one of the above and no longer serve the API; closed hotels
+> (`habbo.dk`, `habbo.se`, etc.) are fully offline.
+
 ---
 
 ## API reference
@@ -328,6 +333,8 @@ All derby endpoints require an `api_key`. Set it once in `config.apiKey` or over
 
 All methods default to `revision = 1` (always resolves to the current version).
 
+#### Raw fetches
+
 | Method | File type | Returns |
 |--------|-----------|---------|
 | `getFigureData(revision?, options?)` | `figuredata` | XML string |
@@ -335,8 +342,28 @@ All methods default to `revision = 1` (always resolves to the current version).
 | `getFurniData(revision?, options?)` | `furnidata_xml` | XML string |
 | `getExternalVariables(revision?, options?)` | `external_variables` | Raw `key=value` text |
 | `getExternalVariablesMap(revision?, options?)` | `external_variables` | `Record<string, string>` |
+| `getExternalTexts(revision?, options?)` | `external_flash_texts` | Raw `key=value` text |
+| `getExternalTextsMap(revision?, options?)` | `external_flash_texts` | `Record<string, string>` |
 | `resolveUrl(type, revision?, options?)` | any | Resolved hashed URL string (no body download) |
 | `fetchRaw(type, revision?, options?)` | any | Raw string contents |
+
+#### Parsed (XML → typed objects)
+
+| Method | Returns |
+|--------|---------|
+| `getParsedFigureData(revision?, options?)` | `FigureData` (palettes, set-types, sets, parts) |
+| `getParsedFurniData(revision?, options?)` | `FurniData` (room + wall furniture types) |
+| `getParsedProductData(revision?, options?)` | `ProductDataEntry[]` |
+
+You can also call the standalone parsers directly: `parseFigureData(xml)`, `parseFurniData(xml)`, `parseProductData(xml)`.
+
+#### Hashes & client URLs
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| `getHashes(options?)` | `GET /gamedata/hashes` | `GameDataHashesResponse` — every asset hash in one request |
+| `buildHashedUrl(entry)` | — | Full immutable URL for a hash entry |
+| `getClientUrls(options?)` | `GET /gamedata/clienturls` | `ClientUrlsResponse` — Unity/Flash client downloads + versions |
 
 ```ts
 import { GameDataType } from '@jorgeserrano26/habbo-sdk';
@@ -346,9 +373,54 @@ const url  = await sdk.gamedata.resolveUrl(GameDataType.FurniDataXml);
 
 const vars = await sdk.gamedata.getExternalVariablesMap();
 console.log(vars['flash.client.url']);
+
+const furni = await sdk.gamedata.getParsedFurniData();
+console.log(furni.roomitemtypes[0].name);
 ```
 
 > Gamedata values differ per hotel — always use the same configured domain.
+
+---
+
+### `GameDataHashedClient` — efficient multi-asset loading
+
+When you need several gamedata files, fetch the hash table **once** and build a
+pre-resolved client. Every asset is then fetched directly from its immutable
+CDN URL — no `307` redirect per request.
+
+The pattern: **fetch hashes → instantiate → fetch assets** (hash + hotel domain).
+
+```ts
+import { HabboSDK, HabboHotel, GameDataHashedClient } from '@jorgeserrano26/habbo-sdk';
+
+const sdk = new HabboSDK({ hotel: HabboHotel.ES });
+
+// One request to /gamedata/hashes, then a ready-to-use client:
+const hashed = await GameDataHashedClient.fromHotel(sdk.gamedata);
+
+// All of these hit the CDN directly (no redirects):
+const figureXml = await hashed.getFigureData();
+const furni     = await hashed.getParsedFurniData();
+const vars      = await hashed.getExternalVariablesMap();
+
+// Inspect or build URLs yourself:
+console.log(hashed.resolveUrl(GameDataType.FurniDataXml));
+console.log(hashed.hashes);
+```
+
+| Method | Description |
+|--------|-------------|
+| `GameDataHashedClient.fromHotel(gamedata, options?)` | Static factory — fetches hashes and returns a client |
+| `new GameDataHashedClient(gamedata, hashes)` | Construct from an already-fetched hashes response |
+| `resolveUrl(type)` | Full hashed URL for a type (or `undefined`) |
+| `fetchRaw(type, options?)` | Raw contents via the hashed URL |
+| `getFigureData / getProductData / getFurniData / getExternalVariables / getExternalTexts` | Direct raw fetches |
+| `getExternalVariablesMap / getExternalTextsMap` | Parsed `key=value` records |
+| `getParsedFigureData / getParsedFurniData / getParsedProductData` | Typed parsed objects |
+
+> **Caching is intentionally left to you.** The hashes change rarely, so cache
+> the `GameDataHashedClient` (or its `.hashes`) for as long as fits your app —
+> in-process with a TTL, edge KV, etc. The SDK does not cache automatically.
 
 ---
 
@@ -529,15 +601,19 @@ npm run test:coverage
 
 | File | Tests | Coverage |
 |------|-------|----------|
-| `enums.test.ts` | 5 | 100% |
+| `enums.test.ts` | 7 | 100% |
 | `errors.test.ts` | 33 | 100% |
-| `http.test.ts` | 65 | 100% |
+| `http.test.ts` | 66 | 100% |
 | `clients/base.test.ts` | 4 | 100% |
 | `clients/habbo.test.ts` | 23 | 100% |
 | `clients/origins.test.ts` | 20 | 100% |
-| `clients/gamedata.test.ts` | 23 | 100% |
-| `sdk.test.ts` | 10 | 100% |
-| **Total** | **183** | **100%** |
+| `clients/gamedata.test.ts` | 49 | 100% |
+| `sdk.test.ts` | 12 | 100% |
+| `parsers/xml-utils.test.ts` | 22 | 100% |
+| `parsers/figuredata.test.ts` | 10 | 100% |
+| `parsers/furnidata.test.ts` | 10 | 100% |
+| `parsers/productdata.test.ts` | 5 | 100% |
+| **Total** | **261** | **100%** |
 
 Coverage is enforced at 100% for statements, functions, branches and lines via `@vitest/coverage-v8`.
 
@@ -559,11 +635,18 @@ dist/
 ├── errors.js / .d.ts
 ├── http.js   / .d.ts
 ├── sdk.js    / .d.ts
-└── clients/
-    ├── base.js / .d.ts
-    ├── habbo.js / .d.ts
-    ├── origins.js / .d.ts
-    └── gamedata.js / .d.ts
+├── clients/
+│   ├── base.js / .d.ts
+│   ├── habbo.js / .d.ts
+│   ├── origins.js / .d.ts
+│   ├── gamedata.js / .d.ts
+│   └── gamedata-hashes.js / .d.ts
+└── parsers/
+    ├── index.js / .d.ts
+    ├── xml-utils.js / .d.ts
+    ├── figuredata.js / .d.ts
+    ├── furnidata.js / .d.ts
+    └── productdata.js / .d.ts
 ```
 
 ---

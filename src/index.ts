@@ -13,6 +13,7 @@ export { BaseClient } from './clients/base.js';
 export { HabboClient } from './clients/habbo.js';
 export { HabboOriginsClient } from './clients/origins.js';
 export { GameDataClient } from './clients/gamedata.js';
+export { GameDataHashedClient } from './clients/gamedata-hashes.js';
 
 // HTTP layer (useful for custom clients / advanced usage)
 export { HttpClient, buildBaseUrl } from './http.js';
@@ -46,6 +47,8 @@ export {
   SkillType,
   GameDataType,
   GameDataHashName,
+  FigureGender,
+  FigurePartType,
   HttpMethod,
   HabboResource,
 } from './enums.js';

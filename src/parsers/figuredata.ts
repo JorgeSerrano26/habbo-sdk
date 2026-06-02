@@ -1,4 +1,5 @@
-import { boolOf, extractBlocks, extractSelfClosing, intOf, parseAttrs, textOf } from './xml-utils.js';
+import { FigureGender, FigurePartType } from '../enums.js';
+import { extractBlocks, extractSelfClosing, parseAttrs } from './xml-utils.js';
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -20,7 +21,8 @@ export interface FigurePalette {
 
 export interface FigurePart {
   id: number;
-  type: string;
+  /** Asset layer within the set. Use {@link FigurePartType} for known values. */
+  type: FigurePartType | string;
   colorable: boolean;
   index: number;
   colorindex: number;
@@ -28,8 +30,7 @@ export interface FigurePart {
 
 export interface FigureSet {
   id: number;
-  /** `"M"` | `"F"` | `"U"` */
-  gender: string;
+  gender: FigureGender;
   club: number;
   colorable: boolean;
   selectable: boolean;
@@ -38,8 +39,8 @@ export interface FigureSet {
 }
 
 export interface FigureSetType {
-  /** Body-part type code, e.g. `"hr"` (hair), `"hd"` (head), `"ch"` (chest). */
-  type: string;
+  /** Body-part category, e.g. `FigurePartType.Hair`. */
+  type: FigurePartType | string;
   paletteid: number;
   mand_m_0: boolean;
   mand_f_0: boolean;
@@ -92,7 +93,7 @@ export function parseFigureData(xml: string): FigureData {
         const p = parseAttrs(pa);
         return {
           id: parseInt(p['id'] ?? '0', 10),
-          type: p['type'] ?? '',
+          type: (p['type'] ?? '') as FigurePartType | string,
           colorable: p['colorable'] === '1',
           index: parseInt(p['index'] ?? '0', 10),
           colorindex: parseInt(p['colorindex'] ?? '0', 10),
@@ -100,7 +101,7 @@ export function parseFigureData(xml: string): FigureData {
       });
       return {
         id: parseInt(s['id'] ?? '0', 10),
-        gender: s['gender'] ?? 'U',
+        gender: (s['gender'] ?? FigureGender.Unisex) as FigureGender,
         club: parseInt(s['club'] ?? '0', 10),
         colorable: s['colorable'] === '1',
         selectable: s['selectable'] === '1',
@@ -109,7 +110,7 @@ export function parseFigureData(xml: string): FigureData {
       };
     });
     return {
-      type: a['type'] ?? '',
+      type: (a['type'] ?? '') as FigurePartType | string,
       paletteid: parseInt(a['paletteid'] ?? '0', 10),
       mand_m_0: a['mand_m_0'] === '1',
       mand_f_0: a['mand_f_0'] === '1',

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GameDataClient } from '../clients/gamedata.js';
+import { GameDataHashedClient } from '../clients/gamedata-hashes.js';
 import { HabboClient } from '../clients/habbo.js';
 import { HabboOriginsClient } from '../clients/origins.js';
 import { HabboHotel } from '../enums.js';
@@ -13,6 +14,8 @@ import {
   buildBaseUrl,
   createHabboApiError,
   DerbyNotFoundError,
+  FigureGender,
+  FigurePartType,
   GameDataHashName,
   GameDataType,
   GroupNotFoundError,
@@ -106,6 +109,11 @@ describe('index.ts public API surface', () => {
     expect(typeof parseProductData).toBe('function');
   });
 
+  it('re-exports GameDataHashedClient', async () => {
+    const mod = await import('../index.js');
+    expect(mod.GameDataHashedClient).toBe(GameDataHashedClient);
+  });
+
   it('re-exports enums with the correct values', () => {
     expect(HabboHotel.ES).toBe('es');
     expect(SkillType.Fishing).toBe('FISHING');
@@ -114,6 +122,8 @@ describe('index.ts public API surface', () => {
     expect(GameDataHashName.Furnidata).toBe('furnidata');
     expect(GameDataHashName.ExternalTexts).toBe('external_texts');
     expect(GameDataHashName.FigurePartList).toBe('figurepartlist');
+    expect(FigureGender.Male).toBe('M');
+    expect(FigurePartType.Hair).toBe('hr');
     expect(HttpMethod.POST).toBe('POST');
     expect(HabboResource.User).toBe('user');
   });

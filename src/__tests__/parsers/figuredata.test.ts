@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FigureGender, FigurePartType } from '../../enums.js';
 import { parseFigureData } from '../../parsers/figuredata.js';
 
 const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -73,7 +74,7 @@ describe('parseFigureData', () => {
 
     const first = figureSets[0]!;
     expect(first.id).toBe(100);
-    expect(first.gender).toBe('M');
+    expect(first.gender).toBe(FigureGender.Male);
     expect(first.club).toBe(0);
     expect(first.colorable).toBe(true);
     expect(first.selectable).toBe(true);
@@ -87,14 +88,14 @@ describe('parseFigureData', () => {
 
     expect(parts[0]).toEqual({
       id: 1,
-      type: 'hr',
+      type: FigurePartType.Hair,
       colorable: true,
       index: 0,
       colorindex: 1,
     });
     expect(parts[1]).toEqual({
       id: 2,
-      type: 'hrb',
+      type: FigurePartType.HairBelow,
       colorable: false,
       index: 1,
       colorindex: 0,

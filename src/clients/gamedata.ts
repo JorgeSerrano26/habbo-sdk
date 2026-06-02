@@ -7,11 +7,28 @@
  *
  * Results are returned as raw strings (XML for figure/product/furni data,
  * `key=value` text for external variables) to keep the SDK dependency-free.
- * Use {@link GameDataClient.getExternalVariablesMap} for a parsed map, or pass
- * the strings to your preferred XML parser.
+ * Use {@link GameDataClient.getExternalVariablesMap} for a parsed map, or the
+ * standalone `parseFigureData`, `parseFurniData`, `parseProductData` functions
+ * exported from the package for typed XML parsing.
  *
  * Values differ per hotel — this client uses the same configured domain as the
  * rest of the SDK.
+ *
+ * ## Efficient multi-asset loading with hashes
+ *
+ * `GET /gamedata/hashes` returns every asset hash in one request. Use
+ * {@link getHashes} + {@link buildHashedUrl} to build direct CDN URLs and
+ * avoid 307 redirects. Caching the result is intentionally left to the caller
+ * (server-side cache, edge cache, etc.) since caching strategies vary widely.
+ *
+ * ```ts
+ * const { hashes } = await sdk.gamedata.getHashes();
+ * // Build all direct URLs at once — no further /gamedata requests needed:
+ * for (const entry of hashes) {
+ *   const directUrl = sdk.gamedata.buildHashedUrl(entry);
+ *   // fetch(directUrl) → immutable CDN response
+ * }
+ * ```
  */
 
 import { GameDataType } from '../enums.js';
@@ -162,16 +179,7 @@ export class GameDataClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Record<string, string>> {
     const raw = await this.getExternalVariables(revision, options);
-    const result: Record<string, string> = {};
-    for (const line of raw.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq === -1) continue;
-      const key = trimmed.slice(0, eq).trim();
-      result[key] = trimmed.slice(eq + 1);
-    }
-    return result;
+    return this.parseKeyValue(raw);
   }
 
   /**
@@ -191,14 +199,30 @@ export class GameDataClient extends BaseClient {
   }
 
   /**
+   * Fetches `external_flash_texts` and parses it into a key/value record.
+   * Identical format to `external_variables` (`key=value` per line).
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns A record mapping each text key to its value.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  async getExternalTextsMap(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<Record<string, string>> {
+    const raw = await this.getExternalTexts(revision, options);
+    return this.parseKeyValue(raw);
+  }
+
+  /**
    * Fetches all current gamedata hashes in a single request.
    *
    * `GET /gamedata/hashes`
    *
-   * This is more efficient than calling {@link resolveUrl} once per file type,
-   * because it returns every hash in one round-trip. Use it to:
-   * - Build all direct (hashed) download URLs at once.
-   * - Cache the hashes and detect when assets change.
+   * Returns every gamedata asset's current hash in one round-trip. Combine
+   * with {@link buildHashedUrl} to build direct, immutable CDN URLs — no
+   * further redirects needed. Caching the result is left to the caller.
    *
    * @param options - Optional abort signal and per-request headers.
    * @returns All known gamedata entries with their current hashes.
@@ -292,31 +316,6 @@ export class GameDataClient extends BaseClient {
     return parseProductData(xml);
   }
 
-  /**
-   * Fetches `external_flash_texts` and parses it into a key/value record.
-   * Identical format to `external_variables` (`key=value` per line).
-   *
-   * @param revision - The revision to request (defaults to `1`).
-   * @param options - Optional abort signal and per-request headers.
-   * @returns A record mapping each text key to its value.
-   * @throws {HabboApiError} On a non-2xx response.
-   */
-  async getExternalTextsMap(
-    revision: string | number = 1,
-    options: RequestOptions = {},
-  ): Promise<Record<string, string>> {
-    const raw = await this.getExternalTexts(revision, options);
-    const result: Record<string, string> = {};
-    for (const line of raw.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq === -1) continue;
-      result[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
-    }
-    return result;
-  }
-
   /* ----------------------------- Client URLs ------------------------------ */
 
   /**
@@ -343,6 +342,21 @@ export class GameDataClient extends BaseClient {
       headers: options.headers,
       signal: options.signal,
     });
+  }
+
+  /* ----------------------------- helpers ---------------------------------- */
+
+  /** Parses `key=value` text into a record; blank lines and no-`=` lines are skipped. */
+  private parseKeyValue(raw: string): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) continue;
+      result[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
+    }
+    return result;
   }
 
   /** Builds the `/gamedata/{type}/{revision}` request path. */
