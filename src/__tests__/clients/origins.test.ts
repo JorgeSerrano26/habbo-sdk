@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HabboOriginsClient } from '../../clients/origins.js';
-import { HabboHotel, HabboResource, SkillType } from '../../enums.js';
+import { HabboHotel, HabboResource, SkillType } from '../../enums/index.js';
 
 function makeClient(apiKey?: string) {
   const client = new HabboOriginsClient({ hotel: HabboHotel.ES, fetch: vi.fn(), apiKey });

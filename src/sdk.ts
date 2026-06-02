@@ -7,7 +7,7 @@ import { HttpClient } from './http.js';
 import { HabboClient } from './clients/habbo.js';
 import { HabboOriginsClient } from './clients/origins.js';
 import { GameDataClient } from './clients/gamedata.js';
-import type { HabboClientConfig } from './types.js';
+import type { HabboClientConfig } from './types/index.js';
 
 /**
  * The main entry point of the SDK.

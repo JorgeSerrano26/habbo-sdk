@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HabboClient } from '../../clients/habbo.js';
-import { HabboHotel, HabboResource, HttpMethod } from '../../enums.js';
+import { HabboHotel, HabboResource, HttpMethod } from '../../enums/index.js';
 
 function makeClient() {
   const client = new HabboClient({ hotel: HabboHotel.ES, fetch: vi.fn() });

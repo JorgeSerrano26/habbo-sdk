@@ -7,7 +7,7 @@
  * {@link HabboTimeoutError} on timeout.
  */
 
-import { HabboResource, HttpMethod } from '../enums.js';
+import { HabboResource, HttpMethod } from '../enums/index.js';
 import { BaseClient } from './base.js';
 import type {
   Achievement,
@@ -24,7 +24,10 @@ import type {
   User,
   UserBadge,
   UserProfile,
-} from '../types.js';
+} from '../types/index.js';
+
+/** Common path prefix shared by every modern Habbo Web API endpoint. */
+const API = '/api/public';
 
 export class HabboClient extends BaseClient {
   /* ----------------------------- Service ------------------------------- */
@@ -40,7 +43,7 @@ export class HabboClient extends BaseClient {
    */
   ping(options: RequestOptions = {}): Promise<unknown> {
     return this.http.request({
-      path: '/api/public/ping',
+      path: `${API}/ping`,
       headers: options.headers,
       signal: options.signal,
     });
@@ -59,7 +62,7 @@ export class HabboClient extends BaseClient {
    */
   getAchievements(options: RequestOptions = {}): Promise<Achievement[]> {
     return this.http.request<Achievement[]>({
-      path: '/api/public/achievements',
+      path: `${API}/achievements`,
       headers: options.headers,
       signal: options.signal,
     });
@@ -80,7 +83,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Achievement[]> {
     return this.http.request<Achievement[]>({
-      path: `/api/public/achievements/${encodeURIComponent(uniqueId)}`,
+      path: `${API}/achievements/${encodeURIComponent(uniqueId)}`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -105,7 +108,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<BadgeOwners> {
     return this.http.request<BadgeOwners>({
-      path: `/api/public/badge/owners/${encodeURIComponent(badgeCode)}`,
+      path: `${API}/badge/owners/${encodeURIComponent(badgeCode)}`,
       resource: HabboResource.Badge,
       resourceId: badgeCode,
       headers: options.headers,
@@ -127,7 +130,7 @@ export class HabboClient extends BaseClient {
    */
   getGroup(groupId: string, options: RequestOptions = {}): Promise<Group> {
     return this.http.request<Group>({
-      path: `/api/public/groups/${encodeURIComponent(groupId)}`,
+      path: `${API}/groups/${encodeURIComponent(groupId)}`,
       resource: HabboResource.Group,
       resourceId: groupId,
       headers: options.headers,
@@ -150,7 +153,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<GroupMember[]> {
     return this.http.request<GroupMember[]>({
-      path: `/api/public/groups/${encodeURIComponent(groupId)}/members`,
+      path: `${API}/groups/${encodeURIComponent(groupId)}/members`,
       resource: HabboResource.Group,
       resourceId: groupId,
       headers: options.headers,
@@ -172,7 +175,7 @@ export class HabboClient extends BaseClient {
    */
   getRoom(roomId: string | number, options: RequestOptions = {}): Promise<Room> {
     return this.http.request<Room>({
-      path: `/api/public/rooms/${encodeURIComponent(String(roomId))}`,
+      path: `${API}/rooms/${encodeURIComponent(String(roomId))}`,
       resource: HabboResource.Room,
       resourceId: String(roomId),
       headers: options.headers,
@@ -193,7 +196,7 @@ export class HabboClient extends BaseClient {
    */
   getHotLooks(options: RequestOptions = {}): Promise<HotLook[]> {
     return this.http.request<HotLook[]>({
-      path: '/api/public/lists/hotlooks',
+      path: `${API}/lists/hotlooks`,
       headers: options.headers,
       signal: options.signal,
     });
@@ -221,7 +224,7 @@ export class HabboClient extends BaseClient {
     options: ConditionalRequestOptions = {},
   ): Promise<User> {
     return this.http.request<User>({
-      path: '/api/public/users',
+      path: `${API}/users`,
       query: { name },
       resource: HabboResource.User,
       resourceId: name,
@@ -246,7 +249,7 @@ export class HabboClient extends BaseClient {
     options: ConditionalRequestOptions = {},
   ): Promise<User> {
     return this.http.request<User>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: this.withIfNoneMatch(options),
@@ -269,7 +272,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<UserProfile> {
     return this.http.request<UserProfile>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}/profile`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}/profile`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -292,7 +295,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Friend[]> {
     return this.http.request<Friend[]>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}/friends`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}/friends`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -315,7 +318,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Group[]> {
     return this.http.request<Group[]>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}/groups`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}/groups`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -338,7 +341,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Room[]> {
     return this.http.request<Room[]>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}/rooms`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}/rooms`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -361,7 +364,7 @@ export class HabboClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<UserBadge[]> {
     return this.http.request<UserBadge[]>({
-      path: `/api/public/users/${encodeURIComponent(uniqueId)}/badges`,
+      path: `${API}/users/${encodeURIComponent(uniqueId)}/badges`,
       resource: HabboResource.User,
       resourceId: uniqueId,
       headers: options.headers,
@@ -394,7 +397,7 @@ export class HabboClient extends BaseClient {
   ): Promise<MarketplaceStatsBatchResponse> {
     return this.http.request<MarketplaceStatsBatchResponse>({
       method: HttpMethod.POST,
-      path: '/api/public/marketplace/stats/batch',
+      path: `${API}/marketplace/stats/batch`,
       body: request,
       headers: options.headers,
       signal: options.signal,

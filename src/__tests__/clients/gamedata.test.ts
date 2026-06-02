@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameDataClient } from '../../clients/gamedata.js';
 import { GameDataHashedClient } from '../../clients/gamedata-hashes.js';
-import { GameDataType, HabboHotel } from '../../enums.js';
-import type { GameDataHashEntry, GameDataHashesResponse } from '../../types.js';
+import { GameDataType, HabboHotel } from '../../enums/index.js';
+import type { GameDataHashEntry, GameDataHashesResponse } from '../../types/index.js';
 
 const HASHED_URLS: Record<GameDataType, string> = {
   [GameDataType.FigureData]: 'https://www.habbo.es/gamedata/figuredata/abc123',

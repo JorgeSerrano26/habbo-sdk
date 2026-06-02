@@ -1,4 +1,4 @@
-import { FigureGender, FigurePartType } from '../enums.js';
+import { FigureGender, FigurePartType } from '../enums/index.js';
 import { extractBlocks, extractSelfClosing, parseAttrs } from './xml-utils.js';
 
 /* -------------------------------------------------------------------------- */

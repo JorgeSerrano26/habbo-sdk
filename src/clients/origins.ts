@@ -8,7 +8,7 @@
  * timeout.
  */
 
-import { HabboResource, SkillType } from '../enums.js';
+import { HabboResource, SkillType } from '../enums/index.js';
 import { BaseClient } from './base.js';
 import type {
   ApiKeyOptions,
@@ -21,7 +21,10 @@ import type {
   RequestOptions,
   SkillsLeaderboard,
   SkillsLeaderboardOptions,
-} from '../types.js';
+} from '../types/index.js';
+
+/** Common path prefix shared by every Habbo Origins Web API endpoint. */
+const API = '/api/public';
 
 export class HabboOriginsClient extends BaseClient {
   /* ------------------------------ Users -------------------------------- */
@@ -41,7 +44,7 @@ export class HabboOriginsClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<string[]> {
     return this.http.request<string[]>({
-      path: `/api/public/users/by-playerId/${encodeURIComponent(uniquePlayerId)}`,
+      path: `${API}/users/by-playerId/${encodeURIComponent(uniquePlayerId)}`,
       resource: HabboResource.Player,
       resourceId: uniquePlayerId,
       headers: options.headers,
@@ -68,7 +71,7 @@ export class HabboOriginsClient extends BaseClient {
     options: MatchListOptions = {},
   ): Promise<string[]> {
     return this.http.request<string[]>({
-      path: `/api/public/matches/v1/${encodeURIComponent(uniquePlayerId)}/ids`,
+      path: `${API}/matches/v1/${encodeURIComponent(uniquePlayerId)}/ids`,
       query: {
         offset: options.offset,
         limit: options.limit,
@@ -97,7 +100,7 @@ export class HabboOriginsClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<MatchDetails> {
     return this.http.request<MatchDetails>({
-      path: `/api/public/matches/v1/${encodeURIComponent(uniqueMatchId)}`,
+      path: `${API}/matches/v1/${encodeURIComponent(uniqueMatchId)}`,
       resource: HabboResource.Match,
       resourceId: uniqueMatchId,
       headers: options.headers,
@@ -123,7 +126,7 @@ export class HabboOriginsClient extends BaseClient {
     options: DerbyListOptions = {},
   ): Promise<string[]> {
     return this.http.request<string[]>({
-      path: `/api/public/minigame/derby/v1/${encodeURIComponent(uniquePlayerId)}/ids`,
+      path: `${API}/minigame/derby/v1/${encodeURIComponent(uniquePlayerId)}/ids`,
       query: {
         offset: options.offset,
         limit: options.limit,
@@ -153,7 +156,7 @@ export class HabboOriginsClient extends BaseClient {
     options: ApiKeyOptions = {},
   ): Promise<DerbyDetails> {
     return this.http.request<DerbyDetails>({
-      path: `/api/public/minigame/derby/v1/${encodeURIComponent(uniqueDerbyId)}`,
+      path: `${API}/minigame/derby/v1/${encodeURIComponent(uniqueDerbyId)}`,
       query: { api_key: this.resolveApiKey(options.apiKey) },
       resource: HabboResource.Derby,
       resourceId: uniqueDerbyId,
@@ -173,7 +176,7 @@ export class HabboOriginsClient extends BaseClient {
    */
   getDerbyStatus(options: ApiKeyOptions = {}): Promise<DerbyStatus> {
     return this.http.request<DerbyStatus>({
-      path: '/api/public/minigame/derby/v1/status',
+      path: `${API}/minigame/derby/v1/status`,
       query: { api_key: this.resolveApiKey(options.apiKey) },
       headers: options.headers,
       signal: options.signal,
@@ -199,7 +202,7 @@ export class HabboOriginsClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<PlayerSkill> {
     return this.http.request<PlayerSkill>({
-      path: `/api/public/skills/${encodeURIComponent(uniquePlayerId)}`,
+      path: `${API}/skills/${encodeURIComponent(uniquePlayerId)}`,
       query: { skillType },
       resource: HabboResource.Player,
       resourceId: uniquePlayerId,
@@ -223,7 +226,7 @@ export class HabboOriginsClient extends BaseClient {
     options: SkillsLeaderboardOptions = {},
   ): Promise<SkillsLeaderboard> {
     return this.http.request<SkillsLeaderboard>({
-      path: '/api/public/skills/leaderboard',
+      path: `${API}/skills/leaderboard`,
       query: { skillType, page: options.page },
       headers: options.headers,
       signal: options.signal,

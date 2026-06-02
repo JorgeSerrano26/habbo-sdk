@@ -31,9 +31,10 @@
  * ```
  */
 
-import { GameDataType } from '../enums.js';
+import { GameDataType } from '../enums/index.js';
 import { parseFigureData } from '../parsers/figuredata.js';
 import { parseFurniData } from '../parsers/furnidata.js';
+import { parseKeyValue } from '../parsers/keyvalue.js';
 import { parseProductData } from '../parsers/productdata.js';
 import { BaseClient } from './base.js';
 import type {
@@ -41,7 +42,7 @@ import type {
   GameDataHashEntry,
   GameDataHashesResponse,
   RequestOptions,
-} from '../types.js';
+} from '../types/index.js';
 import type { FigureData } from '../parsers/figuredata.js';
 import type { FurniData } from '../parsers/furnidata.js';
 import type { ProductDataEntry } from '../parsers/productdata.js';
@@ -179,7 +180,7 @@ export class GameDataClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Record<string, string>> {
     const raw = await this.getExternalVariables(revision, options);
-    return this.parseKeyValue(raw);
+    return parseKeyValue(raw);
   }
 
   /**
@@ -212,7 +213,7 @@ export class GameDataClient extends BaseClient {
     options: RequestOptions = {},
   ): Promise<Record<string, string>> {
     const raw = await this.getExternalTexts(revision, options);
-    return this.parseKeyValue(raw);
+    return parseKeyValue(raw);
   }
 
   /**
@@ -345,19 +346,6 @@ export class GameDataClient extends BaseClient {
   }
 
   /* ----------------------------- helpers ---------------------------------- */
-
-  /** Parses `key=value` text into a record; blank lines and no-`=` lines are skipped. */
-  private parseKeyValue(raw: string): Record<string, string> {
-    const result: Record<string, string> = {};
-    for (const line of raw.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq === -1) continue;
-      result[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
-    }
-    return result;
-  }
 
   /** Builds the `/gamedata/{type}/{revision}` request path. */
   private path(type: GameDataType, revision: string | number): string {

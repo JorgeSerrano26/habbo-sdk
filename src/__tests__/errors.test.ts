@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HabboResource } from '../enums.js';
+import { HabboResource } from '../enums/index.js';
 import {
   AchievementNotFoundError,
   BadgeNotFoundError,
@@ -18,7 +18,7 @@ import {
   PlayerNotFoundError,
   RoomNotFoundError,
   UserNotFoundError,
-} from '../errors.js';
+} from '../errors/index.js';
 
 const BASE = { status: 400, statusText: 'Bad Request', url: 'https://x.test/', body: null };
 

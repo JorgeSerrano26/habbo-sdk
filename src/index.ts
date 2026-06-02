@@ -38,8 +38,8 @@ export {
   HabboServerError,
   HabboTimeoutError,
   createHabboApiError,
-} from './errors.js';
-export type { HabboApiErrorInit, ErrorContext } from './errors.js';
+} from './errors/index.js';
+export type { HabboApiErrorInit, ErrorContext } from './errors/index.js';
 
 // Enums
 export {
@@ -51,10 +51,10 @@ export {
   FigurePartType,
   HttpMethod,
   HabboResource,
-} from './enums.js';
+} from './enums/index.js';
 
 // Types
-export type * from './types.js';
+export type * from './types/index.js';
 
 // Parsers (standalone functions + types)
 export {

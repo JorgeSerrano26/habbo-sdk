@@ -7,13 +7,18 @@
  * with exponential backoff for transient failures.
  */
 
-import { HabboHotel, HabboResource, HttpMethod } from './enums.js';
+import { HabboHotel, HabboResource, HttpMethod } from './enums/index.js';
 import {
   createHabboApiError,
   HabboApiError,
   HabboTimeoutError,
-} from './errors.js';
-import type { FetchLike, HabboClientConfig, RetryConfig } from './types.js';
+} from './errors/index.js';
+import { buildBaseUrl } from './lib/url.js';
+import type { FetchLike, HabboClientConfig, RetryConfig } from './types/index.js';
+
+// Re-exported so existing imports (`import { buildBaseUrl } from '.../http.js'`)
+// keep working; the implementation now lives in `lib/url.ts`.
+export { buildBaseUrl };
 
 /** A query string value. `undefined`/`null` values are dropped. */
 export type QueryValue = string | number | boolean | undefined | null;
@@ -48,15 +53,6 @@ const DEFAULT_RETRY: Required<RetryConfig> = {
   retryOnTimeout: true,
   jitter: true,
 };
-
-/**
- * Builds the base URL for a hotel.
- *
- * @example buildBaseUrl(HabboHotel.ES) -> "https://www.habbo.es"
- */
-export function buildBaseUrl(hotel: HabboHotel | string): string {
-  return `https://www.habbo.${hotel}`;
-}
 
 export class HttpClient {
   public readonly baseUrl: string;

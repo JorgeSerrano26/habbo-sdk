@@ -7,7 +7,7 @@
  */
 
 import { HttpClient } from '../http.js';
-import type { HabboClientConfig } from '../types.js';
+import type { HabboClientConfig } from '../types/index.js';
 
 export abstract class BaseClient {
   /** The underlying HTTP client (shared base URL, fetch, headers, timeout). */

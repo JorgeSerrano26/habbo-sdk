@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HabboHotel, HabboResource, HttpMethod } from '../enums.js';
+import { HabboHotel, HabboResource, HttpMethod } from '../enums/index.js';
 import {
   HabboApiError,
   HabboBadRequestError,
@@ -10,7 +10,7 @@ import {
   HabboTimeoutError,
   HabboUnauthorizedError,
   UserNotFoundError,
-} from '../errors.js';
+} from '../errors/index.js';
 import { buildBaseUrl, HttpClient } from '../http.js';
 import { makeResponse, mockFetchHanging, mockFetchSequence } from './helpers.js';
 

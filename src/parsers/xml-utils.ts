@@ -5,20 +5,40 @@
  * without requiring a DOM or external library.
  */
 
+/**
+ * Single, reused attribute regex. It has no interpolation, so one compiled
+ * instance is enough for the whole process. `lastIndex` is reset before each
+ * run (the loop always runs to completion, but resetting is cheap insurance).
+ */
+const ATTR_RE = /(\w+)="([^"]*)"/g;
+
 /** Extracts all `key="value"` attributes from a raw XML tag string. */
 export function parseAttrs(tagContent: string): Record<string, string> {
   const out: Record<string, string> = {};
-  const re = /(\w+)="([^"]*)"/g;
+  ATTR_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(tagContent)) !== null) {
+  while ((m = ATTR_RE.exec(tagContent)) !== null) {
     out[m[1]!] = m[2]!;
   }
   return out;
 }
 
+/**
+ * Cache of compiled `textOf` regexes, keyed by tag name. The set of tag names
+ * is small and fixed, and these regexes are non-global (no `lastIndex` state),
+ * so reusing them is safe and avoids recompiling the same pattern from a string
+ * on every call — a meaningful win when parsing large files like furnidata,
+ * where `textOf` runs dozens of times per item across thousands of items.
+ */
+const textReCache = new Map<string, RegExp>();
+
 /** Returns the text content of the first `<tag>…</tag>` match within `block`. */
 export function textOf(block: string, tag: string): string {
-  const re = new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`);
+  let re = textReCache.get(tag);
+  if (!re) {
+    re = new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`);
+    textReCache.set(tag, re);
+  }
   return re.exec(block)?.[1] ?? '';
 }
 

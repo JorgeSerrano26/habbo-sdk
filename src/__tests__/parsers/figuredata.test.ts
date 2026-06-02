@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FigureGender, FigurePartType } from '../../enums.js';
+import { FigureGender, FigurePartType } from '../../enums/index.js';
 import { parseFigureData } from '../../parsers/figuredata.js';
 
 const SAMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>

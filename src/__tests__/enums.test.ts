@@ -7,7 +7,7 @@ import {
   HabboResource,
   HttpMethod,
   SkillType,
-} from '../enums.js';
+} from '../enums/index.js';
 
 describe('HabboHotel', () => {
   it('has the correct domain suffix values', () => {

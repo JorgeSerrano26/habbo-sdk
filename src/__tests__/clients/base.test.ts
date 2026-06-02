@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HabboHotel } from '../../enums.js';
+import { HabboHotel } from '../../enums/index.js';
 import { HttpClient } from '../../http.js';
 import { HabboClient } from '../../clients/habbo.js';
 

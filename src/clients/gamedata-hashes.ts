@@ -34,16 +34,17 @@
  * ```
  */
 
-import { GameDataType } from '../enums.js';
+import { GameDataType } from '../enums/index.js';
 import { parseFigureData } from '../parsers/figuredata.js';
 import { parseFurniData } from '../parsers/furnidata.js';
+import { parseKeyValue } from '../parsers/keyvalue.js';
 import { parseProductData } from '../parsers/productdata.js';
 import type {
   FigureData,
   FurniData,
   ProductDataEntry,
 } from '../parsers/index.js';
-import type { GameDataHashesResponse, RequestOptions } from '../types.js';
+import type { GameDataHashesResponse, RequestOptions } from '../types/index.js';
 import type { GameDataClient } from './gamedata.js';
 
 /**
@@ -164,12 +165,12 @@ export class GameDataHashedClient {
 
   /** Fetches and parses `external_variables` into a `Record<string, string>`. */
   async getExternalVariablesMap(options: RequestOptions = {}): Promise<Record<string, string>> {
-    return this.parseKeyValue(await this.getExternalVariables(options));
+    return parseKeyValue(await this.getExternalVariables(options));
   }
 
   /** Fetches and parses `external_flash_texts` into a `Record<string, string>`. */
   async getExternalTextsMap(options: RequestOptions = {}): Promise<Record<string, string>> {
-    return this.parseKeyValue(await this.getExternalTexts(options));
+    return parseKeyValue(await this.getExternalTexts(options));
   }
 
   /* ─────────────────────────── Typed parsers ─────────────────────────── */
@@ -194,17 +195,5 @@ export class GameDataHashedClient {
   private findEntry(type: GameDataType) {
     const suffix = HASH_URL_SUFFIX[type];
     return this.hashes.hashes.find((h) => h.url.endsWith('/' + suffix));
-  }
-
-  private parseKeyValue(raw: string): Record<string, string> {
-    const result: Record<string, string> = {};
-    for (const line of raw.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      const eq = trimmed.indexOf('=');
-      if (eq === -1) continue;
-      result[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
-    }
-    return result;
   }
 }

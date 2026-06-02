@@ -3,7 +3,7 @@ import { GameDataClient } from '../clients/gamedata.js';
 import { GameDataHashedClient } from '../clients/gamedata-hashes.js';
 import { HabboClient } from '../clients/habbo.js';
 import { HabboOriginsClient } from '../clients/origins.js';
-import { HabboHotel } from '../enums.js';
+import { HabboHotel } from '../enums/index.js';
 import { HttpClient } from '../http.js';
 import { HabboSDK } from '../sdk.js';
 
