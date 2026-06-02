@@ -1,9 +1,11 @@
-# habbo-sdk
+# @jorgeserrano26/habbo-sdk
 
 > Type-safe, hotel-configurable JavaScript/TypeScript SDK for the **public Habbo & Habbo Origins Web API** and Habbo **gamedata** files.
 
 > **Disclaimer:** This is an **unofficial**, community-made library. It is not affiliated with, endorsed by, or in any way associated with [Sulake Oy](https://www.sulake.com) or the Habbo brand. It simply wraps the publicly available Habbo Web API into typed, reusable classes. All game content, trademarks, and API data belong to their respective owners.
 
+[![npm](https://img.shields.io/badge/npm-%40jorgeserrano26%2Fhabbo--sdk-red)](https://www.npmjs.com/package/@jorgeserrano26/habbo-sdk)
+[![version](https://img.shields.io/badge/version-1.0.0--beta.1-yellow)](#versioning)
 [![Tests](https://img.shields.io/badge/tests-184%20passed-brightgreen)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](#testing)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org)
@@ -33,6 +35,7 @@
 - [Build](#build)
 - [Technologies & versions](#technologies--versions)
 - [Reference links](#reference-links)
+- [Versioning](#versioning)
 - [License](#license)
 
 ---
@@ -66,24 +69,26 @@
 
 ```bash
 # npm
-npm install habbo-sdk
+npm install @jorgeserrano26/habbo-sdk
 
 # pnpm
-pnpm add habbo-sdk
+pnpm add @jorgeserrano26/habbo-sdk
 
 # yarn
-yarn add habbo-sdk
+yarn add @jorgeserrano26/habbo-sdk
 
 # bun
-bun add habbo-sdk
+bun add @jorgeserrano26/habbo-sdk
 ```
+
+> **Beta notice:** The current release is `1.0.0-beta.1`. The public API is stable and fully tested, but minor things may change before `1.0.0`. Pin the version if you need stability: `"@jorgeserrano26/habbo-sdk": "1.0.0-beta.1"`.
 
 ---
 
 ## Quick start
 
 ```ts
-import { HabboSDK, HabboHotel } from 'habbo-sdk';
+import { HabboSDK, HabboHotel } from '@jorgeserrano26/habbo-sdk';
 
 // Create one SDK instance per hotel.
 const sdk = new HabboSDK({ hotel: HabboHotel.ES }); // → https://www.habbo.es
@@ -157,7 +162,7 @@ new HabboSDK({
 Each individual client also accepts the same config:
 
 ```ts
-import { HabboClient, GameDataClient, HabboHotel } from 'habbo-sdk';
+import { HabboClient, GameDataClient, HabboHotel } from '@jorgeserrano26/habbo-sdk';
 
 const habbo    = new HabboClient({ hotel: HabboHotel.FR });
 const gamedata = new GameDataClient({ hotel: HabboHotel.DE });
@@ -334,7 +339,7 @@ All methods default to `revision = 1` (always resolves to the current version).
 | `fetchRaw(type, revision?, options?)` | any | Raw string contents |
 
 ```ts
-import { GameDataType } from 'habbo-sdk';
+import { GameDataType } from '@jorgeserrano26/habbo-sdk';
 
 const url  = await sdk.gamedata.resolveUrl(GameDataType.FurniDataXml);
 // → "https://www.habbo.es/gamedata/furnidata_xml/<hash>"
@@ -393,7 +398,7 @@ import {
   HabboRateLimitError,
   HabboApiError,
   HabboTimeoutError,
-} from 'habbo-sdk';
+} from '@jorgeserrano26/habbo-sdk';
 
 try {
   const user = await sdk.habbo.getUserByName('NonExistent');
@@ -479,7 +484,7 @@ try {
 All clients extend `BaseClient`, which exposes `this.http` (an `HttpClient` instance). You can subclass any client to add custom methods:
 
 ```ts
-import { HabboClient, HabboSDK, HabboHotel, UserNotFoundError } from 'habbo-sdk';
+import { HabboClient, HabboSDK, HabboHotel, UserNotFoundError } from '@jorgeserrano26/habbo-sdk';
 
 class MyHabboClient extends HabboClient {
   /** Looks up a user by name; returns null if not found. */
@@ -601,6 +606,33 @@ dist/
 - **Vitest** — https://vitest.dev/guide
 - **Vitest Coverage (V8)** — https://vitest.dev/guide/coverage
 - **Node.js Fetch** — https://nodejs.org/api/globals.html#fetch
+
+---
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org) (`MAJOR.MINOR.PATCH`).
+
+### Current status: Beta
+
+The current version is **`1.0.0-beta.1`**, published under the `beta` dist-tag on npm. The public API is stable and fully tested, but the library may receive minor breaking changes before the final `1.0.0` release based on community feedback.
+
+| npm tag | Version | Install |
+|---------|---------|---------|
+| `beta` *(current)* | `1.0.0-beta.1` | `npm install @jorgeserrano26/habbo-sdk@beta` |
+| `latest` *(stable, not yet released)* | — | `npm install @jorgeserrano26/habbo-sdk` |
+
+### When `1.0.0` stable drops
+
+Once the API is confirmed, the `latest` tag will be promoted to `1.0.0` and `npm install @jorgeserrano26/habbo-sdk` will install it directly.
+
+### Release cadence (after stable)
+
+| Change | Version bump | Example |
+|--------|-------------|---------|
+| Bug fix, patch | `patch` | `1.0.0` → `1.0.1` |
+| New method / feature, backward-compatible | `minor` | `1.0.0` → `1.1.0` |
+| Breaking change (renamed method, removed export) | `major` | `1.0.0` → `2.0.0` |
 
 ---
 
