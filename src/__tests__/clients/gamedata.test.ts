@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameDataClient } from '../../clients/gamedata.js';
 import { GameDataType, HabboHotel } from '../../enums.js';
+import type { GameDataHashEntry } from '../../types.js';
 
 const HASHED_URLS: Record<GameDataType, string> = {
   [GameDataType.FigureData]: 'https://www.habbo.es/gamedata/figuredata/abc123',
@@ -146,6 +147,18 @@ describe('GameDataClient', () => {
     });
   });
 
+  // ── getExternalTexts ──────────────────────────────────────────────────────
+  describe('getExternalTexts', () => {
+    it('delegates to fetchRaw with ExternalFlashTexts type', async () => {
+      sendSpy.mockResolvedValue(mockSend('key=value'));
+      const result = await client.getExternalTexts();
+      expect(result).toBe('key=value');
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/external_flash_texts/1' }),
+      );
+    });
+  });
+
   // ── getExternalVariables ──────────────────────────────────────────────────
   describe('getExternalVariables', () => {
     it('delegates to fetchRaw with ExternalVariables type', async () => {
@@ -154,6 +167,132 @@ describe('GameDataClient', () => {
       expect(result).toBe('key=value');
       expect(sendSpy).toHaveBeenCalledWith(
         expect.objectContaining({ path: '/gamedata/external_variables/1' }),
+      );
+    });
+  });
+
+  // ── getHashes ─────────────────────────────────────────────────────────────
+  describe('getHashes', () => {
+    it('calls GET /gamedata/hashes via http.request', async () => {
+      const requestSpy = vi.spyOn(client.http, 'request').mockResolvedValue({
+        hashes: [
+          { name: 'furnidata', url: 'https://www.habbo.es/gamedata/furnidata_xml', hash: 'abc123' },
+        ],
+      } as never);
+
+      const result = await client.getHashes();
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/hashes' }),
+      );
+      expect(result.hashes).toHaveLength(1);
+      expect(result.hashes[0]!.name).toBe('furnidata');
+    });
+
+    it('passes signal and headers', async () => {
+      const requestSpy = vi.spyOn(client.http, 'request').mockResolvedValue({ hashes: [] } as never);
+      const signal = new AbortController().signal;
+      await client.getHashes({ signal, headers: { 'X-H': '1' } });
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ signal, headers: { 'X-H': '1' } }),
+      );
+    });
+  });
+
+  // ── buildHashedUrl ────────────────────────────────────────────────────────
+  describe('buildHashedUrl', () => {
+    it('concatenates entry.url and entry.hash with a slash', () => {
+      const entry: GameDataHashEntry = {
+        name: 'furnidata',
+        url: 'https://www.habbo.es/gamedata/furnidata_xml',
+        hash: 'abc123def456',
+      };
+      expect(client.buildHashedUrl(entry)).toBe(
+        'https://www.habbo.es/gamedata/furnidata_xml/abc123def456',
+      );
+    });
+
+    it('works for any entry type', () => {
+      const entry: GameDataHashEntry = {
+        name: 'external_variables',
+        url: 'https://www.habbo.com.br/gamedata/external_variables',
+        hash: 'deadbeef',
+      };
+      expect(client.buildHashedUrl(entry)).toBe(
+        'https://www.habbo.com.br/gamedata/external_variables/deadbeef',
+      );
+    });
+  });
+
+  // ── getParsedFigureData ───────────────────────────────────────────────────
+  describe('getParsedFigureData', () => {
+    it('fetches XML and returns a parsed FigureData object', async () => {
+      sendSpy.mockResolvedValue(
+        mockSend('<figuredata><colors></colors><sets></sets></figuredata>'),
+      );
+      const result = await client.getParsedFigureData();
+      expect(result).toHaveProperty('colors');
+      expect(result).toHaveProperty('sets');
+      expect(Array.isArray(result.colors)).toBe(true);
+    });
+  });
+
+  // ── getParsedFurniData ────────────────────────────────────────────────────
+  describe('getParsedFurniData', () => {
+    it('fetches XML and returns a parsed FurniData object', async () => {
+      sendSpy.mockResolvedValue(
+        mockSend('<furnidata><roomitemtypes></roomitemtypes><wallitemtypes></wallitemtypes></furnidata>'),
+      );
+      const result = await client.getParsedFurniData();
+      expect(result).toHaveProperty('roomitemtypes');
+      expect(result).toHaveProperty('wallitemtypes');
+      expect(Array.isArray(result.roomitemtypes)).toBe(true);
+    });
+  });
+
+  // ── getParsedProductData ──────────────────────────────────────────────────
+  describe('getParsedProductData', () => {
+    it('fetches XML and returns an array of ProductDataEntry', async () => {
+      sendSpy.mockResolvedValue(mockSend('<productdata></productdata>'));
+      const result = await client.getParsedProductData();
+      expect(Array.isArray(result)).toBe(true);
+    });
+  });
+
+  // ── getExternalTextsMap ───────────────────────────────────────────────────
+  describe('getExternalTextsMap', () => {
+    it('fetches and parses external_flash_texts into a record', async () => {
+      sendSpy.mockResolvedValue(mockSend('greeting=Hello\nfarewell=Goodbye'));
+      const map = await client.getExternalTextsMap();
+      expect(map).toEqual({ greeting: 'Hello', farewell: 'Goodbye' });
+    });
+
+    it('skips blank lines and lines without equals', async () => {
+      sendSpy.mockResolvedValue(mockSend('a=1\n\nnoequalssign\nb=2'));
+      const map = await client.getExternalTextsMap();
+      expect(map).toEqual({ a: '1', b: '2' });
+    });
+  });
+
+  // ── getClientUrls ─────────────────────────────────────────────────────────
+  describe('getClientUrls', () => {
+    it('calls GET /gamedata/clienturls via http.request', async () => {
+      const requestSpy = vi.spyOn(client.http, 'request').mockResolvedValue({
+        'unity-windows-version': '2370',
+        'unity-osx-version': '2370',
+      } as never);
+      const result = await client.getClientUrls();
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ path: '/gamedata/clienturls' }),
+      );
+      expect(result['unity-windows-version']).toBe('2370');
+    });
+
+    it('passes signal and headers', async () => {
+      const requestSpy = vi.spyOn(client.http, 'request').mockResolvedValue({} as never);
+      const signal = new AbortController().signal;
+      await client.getClientUrls({ signal, headers: { 'X-H': '1' } });
+      expect(requestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ signal, headers: { 'X-H': '1' } }),
       );
     });
   });

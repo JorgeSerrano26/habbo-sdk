@@ -45,9 +45,28 @@ export {
   HabboHotel,
   SkillType,
   GameDataType,
+  GameDataHashName,
   HttpMethod,
   HabboResource,
 } from './enums.js';
 
 // Types
 export type * from './types.js';
+
+// Parsers (standalone functions + types)
+export {
+  parseFigureData,
+  parseFurniData,
+  parseProductData,
+} from './parsers/index.js';
+export type {
+  FigureColor,
+  FigureData,
+  FigurePalette,
+  FigurePart,
+  FigureSet,
+  FigureSetType,
+  FurniData,
+  FurniType,
+  ProductDataEntry,
+} from './parsers/index.js';

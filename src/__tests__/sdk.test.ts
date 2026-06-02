@@ -13,6 +13,7 @@ import {
   buildBaseUrl,
   createHabboApiError,
   DerbyNotFoundError,
+  GameDataHashName,
   GameDataType,
   GroupNotFoundError,
   HabboApiError,
@@ -30,6 +31,9 @@ import {
   RoomNotFoundError,
   SkillType,
   UserNotFoundError,
+  parseFigureData,
+  parseFurniData,
+  parseProductData,
 } from '../index.js';
 
 describe('HabboSDK', () => {
@@ -96,10 +100,20 @@ describe('index.ts public API surface', () => {
     expect(typeof buildBaseUrl).toBe('function');
   });
 
+  it('re-exports parser functions', () => {
+    expect(typeof parseFigureData).toBe('function');
+    expect(typeof parseFurniData).toBe('function');
+    expect(typeof parseProductData).toBe('function');
+  });
+
   it('re-exports enums with the correct values', () => {
     expect(HabboHotel.ES).toBe('es');
     expect(SkillType.Fishing).toBe('FISHING');
     expect(GameDataType.FurniDataXml).toBe('furnidata_xml');
+    expect(GameDataType.ExternalFlashTexts).toBe('external_flash_texts');
+    expect(GameDataHashName.Furnidata).toBe('furnidata');
+    expect(GameDataHashName.ExternalTexts).toBe('external_texts');
+    expect(GameDataHashName.FigurePartList).toBe('figurepartlist');
     expect(HttpMethod.POST).toBe('POST');
     expect(HabboResource.User).toBe('user');
   });

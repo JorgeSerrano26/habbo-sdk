@@ -55,6 +55,27 @@ export enum GameDataType {
   FurniDataXml = 'furnidata_xml',
   /** Client external variables / config (key=value text). */
   ExternalVariables = 'external_variables',
+  /** Client external flash texts / UI strings (key=value text). */
+  ExternalFlashTexts = 'external_flash_texts',
+}
+
+/**
+ * Known `name` values returned by the `GET /gamedata/hashes` endpoint.
+ *
+ * The values match the `name` field in each {@link GameDataHashEntry}.
+ * Other names may appear if Habbo adds new assets in the future.
+ */
+export enum GameDataHashName {
+  /** Furniture data (`furnidata_xml` path). */
+  Furnidata = 'furnidata',
+  /** Product catalogue data (`productdata_xml` path). */
+  Productdata = 'productdata',
+  /** External client variables (`external_variables` path). */
+  ExternalVariables = 'external_variables',
+  /** External flash UI texts (`external_flash_texts` path). */
+  ExternalTexts = 'external_texts',
+  /** Avatar figure-part list / figuredata (`figuredata` path). */
+  FigurePartList = 'figurepartlist',
 }
 
 /**

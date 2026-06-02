@@ -15,8 +15,19 @@
  */
 
 import { GameDataType } from '../enums.js';
+import { parseFigureData } from '../parsers/figuredata.js';
+import { parseFurniData } from '../parsers/furnidata.js';
+import { parseProductData } from '../parsers/productdata.js';
 import { BaseClient } from './base.js';
-import type { RequestOptions } from '../types.js';
+import type {
+  ClientUrlsResponse,
+  GameDataHashEntry,
+  GameDataHashesResponse,
+  RequestOptions,
+} from '../types.js';
+import type { FigureData } from '../parsers/figuredata.js';
+import type { FurniData } from '../parsers/furnidata.js';
+import type { ProductDataEntry } from '../parsers/productdata.js';
 
 export class GameDataClient extends BaseClient {
   /**
@@ -161,6 +172,177 @@ export class GameDataClient extends BaseClient {
       result[key] = trimmed.slice(eq + 1);
     }
     return result;
+  }
+
+  /**
+   * Fetches the raw `external_flash_texts` document (`key=value` text) holding
+   * the client's UI string table for the hotel.
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns The raw `external_flash_texts` text.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  getExternalTexts(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<string> {
+    return this.fetchRaw(GameDataType.ExternalFlashTexts, revision, options);
+  }
+
+  /**
+   * Fetches all current gamedata hashes in a single request.
+   *
+   * `GET /gamedata/hashes`
+   *
+   * This is more efficient than calling {@link resolveUrl} once per file type,
+   * because it returns every hash in one round-trip. Use it to:
+   * - Build all direct (hashed) download URLs at once.
+   * - Cache the hashes and detect when assets change.
+   *
+   * @param options - Optional abort signal and per-request headers.
+   * @returns All known gamedata entries with their current hashes.
+   * @throws {HabboApiError} On a non-2xx response.
+   * @example
+   * ```ts
+   * const { hashes } = await sdk.gamedata.getHashes();
+   * for (const entry of hashes) {
+   *   console.log(entry.name, sdk.gamedata.buildHashedUrl(entry));
+   * }
+   * ```
+   */
+  getHashes(options: RequestOptions = {}): Promise<GameDataHashesResponse> {
+    return this.http.request<GameDataHashesResponse>({
+      path: '/gamedata/hashes',
+      headers: options.headers,
+      signal: options.signal,
+    });
+  }
+
+  /**
+   * Builds the full, immutable download URL for a gamedata entry returned by
+   * {@link getHashes}.
+   *
+   * The URL is constructed as `entry.url + "/" + entry.hash`.
+   *
+   * @param entry - A single entry from the {@link GameDataHashesResponse}.
+   * @returns The absolute, hashed URL ready for direct download.
+   * @example
+   * ```ts
+   * const { hashes } = await sdk.gamedata.getHashes();
+   * const furni = hashes.find(h => h.name === 'furnidata');
+   * const url = sdk.gamedata.buildHashedUrl(furni!);
+   * // → "https://www.habbo.es/gamedata/furnidata_xml/<hash>"
+   * ```
+   */
+  buildHashedUrl(entry: GameDataHashEntry): string {
+    return `${entry.url}/${entry.hash}`;
+  }
+
+  /* ------------------------------ Parsed ---------------------------------- */
+
+  /**
+   * Fetches and parses the `figuredata` XML into a typed {@link FigureData}
+   * object, containing all figure palettes, set-types, sets and parts.
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns Parsed figure data.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  async getParsedFigureData(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<FigureData> {
+    const xml = await this.getFigureData(revision, options);
+    return parseFigureData(xml);
+  }
+
+  /**
+   * Fetches and parses the `furnidata_xml` XML into a typed {@link FurniData}
+   * object, containing all room and wall furniture types.
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns Parsed furni data.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  async getParsedFurniData(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<FurniData> {
+    const xml = await this.getFurniData(revision, options);
+    return parseFurniData(xml);
+  }
+
+  /**
+   * Fetches and parses the `productdata` XML into an array of
+   * {@link ProductDataEntry} objects.
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns Parsed product data entries.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  async getParsedProductData(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<ProductDataEntry[]> {
+    const xml = await this.getProductData(revision, options);
+    return parseProductData(xml);
+  }
+
+  /**
+   * Fetches `external_flash_texts` and parses it into a key/value record.
+   * Identical format to `external_variables` (`key=value` per line).
+   *
+   * @param revision - The revision to request (defaults to `1`).
+   * @param options - Optional abort signal and per-request headers.
+   * @returns A record mapping each text key to its value.
+   * @throws {HabboApiError} On a non-2xx response.
+   */
+  async getExternalTextsMap(
+    revision: string | number = 1,
+    options: RequestOptions = {},
+  ): Promise<Record<string, string>> {
+    const raw = await this.getExternalTexts(revision, options);
+    const result: Record<string, string> = {};
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq === -1) continue;
+      result[trimmed.slice(0, eq).trim()] = trimmed.slice(eq + 1);
+    }
+    return result;
+  }
+
+  /* ----------------------------- Client URLs ------------------------------ */
+
+  /**
+   * Fetches the current Habbo client download URLs and version numbers.
+   *
+   * `GET /gamedata/clienturls`
+   *
+   * Returns direct download links for the Unity and Flash/AIR clients on
+   * Windows and macOS, along with their respective version strings.
+   *
+   * @param options - Optional abort signal and per-request headers.
+   * @returns Client URLs and version information.
+   * @throws {HabboApiError} On a non-2xx response.
+   * @example
+   * ```ts
+   * const urls = await sdk.gamedata.getClientUrls();
+   * console.log(urls['unity-windows']);
+   * console.log(urls['unity-windows-version']);
+   * ```
+   */
+  getClientUrls(options: RequestOptions = {}): Promise<ClientUrlsResponse> {
+    return this.http.request<ClientUrlsResponse>({
+      path: '/gamedata/clienturls',
+      headers: options.headers,
+      signal: options.signal,
+    });
   }
 
   /** Builds the `/gamedata/{type}/{revision}` request path. */
