@@ -81,6 +81,15 @@ The `HabboSDK` facade exposes everything, with a shared HTTP layer (retries, tim
 
 📚 **Full method reference (every method → exact Habbo endpoint) lives in [`docs/`](docs/).**
 
+---
+
+## Using it with AI / coding agents
+
+This repo ships first-class context for AI assistants:
+
+- **Using the SDK in your project** — read [`docs/ai.md`](docs/ai.md) (a compact, LLM-oriented reference), or copy the portable skill at [`.claude/skills/habbo-sdk/`](.claude/skills/habbo-sdk/SKILL.md) into your own project's `.claude/skills/` so your agent knows the whole API. After installing, it's also at `node_modules/@jorgeserrano26/habbo-sdk/.claude/skills/habbo-sdk/`.
+- **Contributing to this repo** — see [`AGENTS.md`](AGENTS.md).
+
 | Topic | Description |
 |-------|-------------|
 | [Configuration](docs/configuration.md) | All `HabboClientConfig` options, hotels, retries, timeouts, headers. |

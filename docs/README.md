@@ -11,6 +11,12 @@ and the exact Habbo endpoint it calls.
 | [Gamedata](gamedata.md) | `GameDataClient` (`sdk.gamedata`) — gamedata files, hashes, client URLs, XML parsers. |
 | [Gamedata Hashes](gamedata-hashes.md) | `GameDataHashedClient` — efficient multi-asset loading from CDN. |
 | [Errors](errors.md) | The full `HabboApiError` hierarchy and handling patterns. |
+| [AI guide](ai.md) | Compact, LLM-oriented reference for **using** the SDK. |
+
+## For AI / agents
+
+- **Using the SDK in your app:** [`ai.md`](ai.md) — or drop the portable [`habbo-sdk` skill](../.claude/skills/habbo-sdk/SKILL.md) into your project's `.claude/skills/`.
+- **Contributing to this repo:** [`AGENTS.md`](../AGENTS.md).
 
 ## Conventions
 
